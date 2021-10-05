@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout rickshaw
+    - name: Checkout engine
       uses: actions/checkout@v2
       with:
-        path: rickshaw
+        path: engine
 
     - name: Checkout crucible-ci
       uses: actions/checkout@v2
@@ -41,10 +41,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout rickshaw
+    - name: Checkout engine
       uses: actions/checkout@v2
       with:
-        path: rickshaw
+        path: engine
 
     - name: Checkout crucible-ci
       uses: actions/checkout@v2
