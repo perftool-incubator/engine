@@ -408,16 +408,22 @@ function start_tools() {
     if [ "$disable_tools" == "1" ]; then
         echo "Not running tools because --disable-tools=1 was used"
     else
-        pushd tool-data >/dev/null
-        while read -u 9 line; do
-            tool_name=`echo $line | awk -F: '{print $1}'`
-            tool_cmd=`echo $line | sed -e s/^$tool_name://`
-            /bin/mkdir -p $tool_name
-            pushd $tool_name >/dev/null
-            $tool_cmd
+        if pushd tool-data >/dev/null; then
+            while read -u 9 line; do
+                tool_name=`echo $line | awk -F: '{print $1}'`
+                tool_cmd=`echo $line | sed -e s/^$tool_name://`
+                /bin/mkdir -p $tool_name
+                if pushd $tool_name >/dev/null; then
+                    $tool_cmd
+                    popd >/dev/null
+                else
+                    abort_error "start_tools: Failed to pushd to ${tool_name}" $sync $leader
+                fi
+            done 9<"$tool_start_cmds"
             popd >/dev/null
-        done 9<"$tool_start_cmds"
-        popd >/dev/null
+        else
+            abort_error "start_tools: Failed to pushd to tool-data" $sync $leader
+        fi
     fi
 }
 
@@ -739,15 +745,21 @@ function stop_tools() {
     if [ "$disable_tools" == "1" ]; then
         echo "Not running tools because --disable-tools=1 was used"
     else
-        pushd tool-data >/dev/null
-        while read -u 9 line; do
-            tool_name=`echo $line | awk -F: '{print $1}'`
-            tool_cmd=`echo $line | sed -e s/^$tool_name://`
-            pushd $tool_name >/dev/null
-            $tool_cmd
+        if pushd tool-data >/dev/null; then
+            while read -u 9 line; do
+                tool_name=`echo $line | awk -F: '{print $1}'`
+                tool_cmd=`echo $line | sed -e s/^$tool_name://`
+                if pushd $tool_name >/dev/null; then
+                    $tool_cmd
+                    popd >/dev/null
+                else
+                    abort_error "stop_tools: Failed to pushd to ${tool_name}" $sync $leader
+                fi
+            done 9<"$tool_stop_cmds"
             popd >/dev/null
-        done 9<"$tool_stop_cmds"
-        popd >/dev/null
+        else
+            abort_error "stop_tools: Failed to pushd to tool-data" $sync $leader
+        fi
     fi
 }
 
