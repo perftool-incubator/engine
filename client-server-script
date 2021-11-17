@@ -730,8 +730,8 @@ function run_tests() {
                 /bin/mv "$iter_samp_dir" "$iter_samp_dir-fail${sample_failures[$iter_idx]}"
             fi
             let this_attempt_num=$this_attempt_num+1
+            popd >/dev/null  # from $iter_sampl_dir back to $cs_dir
         done #while
-        popd >/dev/null  # from $iter_sampl_dir back to $cs_dir
     done #for all tests
 }
 
