@@ -1,9 +1,9 @@
 name: crucible-ci
 
 on:
-  # run on push or pull request events for the master branch only
+  # run on push or pull request events for the main branch only
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
   # allow for manual invocation from the actions tab
   workflow_dispatch:
