@@ -414,7 +414,7 @@ function start_tools() {
                 tool_cmd=`echo $line | sed -e s/^$tool_name://`
                 /bin/mkdir -p $tool_name
                 if pushd $tool_name >/dev/null; then
-                    $tool_cmd
+                    eval $tool_cmd
                     popd >/dev/null
                 else
                     abort_error "start_tools: Failed to pushd to ${tool_name}" $sync $leader
