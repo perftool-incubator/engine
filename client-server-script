@@ -750,7 +750,7 @@ function stop_tools() {
                 tool_name=`echo $line | awk -F: '{print $1}'`
                 tool_cmd=`echo $line | sed -e s/^$tool_name://`
                 if pushd $tool_name >/dev/null; then
-                    $tool_cmd
+                    eval $tool_cmd
                     popd >/dev/null
                 else
                     abort_error "stop_tools: Failed to pushd to ${tool_name}" $sync $leader
