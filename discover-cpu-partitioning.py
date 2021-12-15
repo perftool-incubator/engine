@@ -81,10 +81,64 @@ def get_rcu_nocbs():
                 else:
                     t_global.log.debug("get_rcu_nocbs: found rcu_nocbs=%s" % (partition[2]))
                     rcu_nocbs = system_cpu_topology.parse_cpu_list(partition[2])
+            else:
+                t_global.log.debug("get_rcu_nocbs: rcu_nocbs not found")
     else:
         raise FileNotFoundError("get_rcu_nocbs: Could not find '%s'" % (input_file))
 
     return(rcu_nocbs)
+
+def get_isolcpus():
+    kernel_cli = ''
+    isolcpus = []
+
+    input_file = '/proc/cmdline'
+
+    path = Path(input_file)
+    if path.exists() and path.is_file():
+        with path.open() as fh:
+            kernel_cli = fh.readline().rstrip()
+            t_global.log.debug("get_isolcpus: kernel_cli: %s" % (kernel_cli))
+
+            # find 'isolcpus=[<arg>[,<arg>[,]]]<cpu-list>' if it exists in the kernel command line
+            match = re.search(r"isolcpus=(\w+,)*([0-9\-,]+)", kernel_cli)
+            if match:
+                t_global.log.debug("get_isolcpus: %s" % (match.group(2)))
+                isolcpus = system_cpu_topology.parse_cpu_list(match.group(2))
+            else:
+                t_global.log.debug("get_isolcpus: no isolcpus found")
+    else:
+        raise FileNotFoundError("get_isolcpus: Could not find '%s'" % (input_file))
+
+    return(isolcpus)
+
+def get_nohz_full():
+    kernel_cli = ''
+    nohz_full = []
+
+    input_file = '/proc/cmdline'
+
+    path = Path(input_file)
+    if path.exists() and path.is_file():
+        with path.open() as fh:
+            kernel_cli = fh.readline().rstrip()
+            t_global.log.debug("get_nohz_full: kernel_cli: %s" % (kernel_cli))
+
+            # find 'nohz_full=<cpu-list>' if it exists in the kernel command line
+            match = re.search(r"nohz_full=[0-9\-,]+", kernel_cli)
+            if match:
+                partition = match.group(0).partition('=')
+                if partition[1] == partition[2] == '':
+                    pass
+                else:
+                    t_global.log.debug("get_nohz_full: %s" % (partition[2]))
+                    nohz_full = system_cpu_topology.parse_cpu_list(partition[2])
+            else:
+                t_global.log.debug("get_nohz_full: no nohz_full found")
+    else:
+        raise FileNotFoundError("get_nohz_full: Could not find '%s'" % (input_file))
+
+    return(nohz_full)
 
 def get_pid_cpus_allowed(pid):
     path = Path('/proc/' + pid + '/status')
@@ -137,20 +191,35 @@ def main():
         online_cpus = system_cpus.get_online_cpus()
         output_cpu_info("online", online_cpus)
 
-        rcu_nocbs_cpus = get_rcu_nocbs()
-        output_cpu_info("rcu_nocbs", rcu_nocbs_cpus)
+        isolcpus_cpus = get_isolcpus()
+        output_cpu_info("isolcpus", isolcpus_cpus)
 
-        odd_list = list(set(rcu_nocbs_cpus) - set(online_cpus))
+        isolation_cpus = isolcpus_cpus
+        if len(isolation_cpus) == 0:
+            nohz_full_cpus = get_nohz_full()
+            output_cpu_info("nohz_full", nohz_full_cpus)
+
+            isolation_cpus = nohz_full_cpus
+            if len(isolation_cpus) == 0:
+                rcu_nocbs_cpus = get_rcu_nocbs()
+                output_cpu_info("rcu_nocbs", rcu_nocbs_cpus)
+
+                isolation_cpus = rcu_nocbs_cpus
+                if len(isolation_cpus) == 0:
+                    t_global.log.error("There are no isolated cpus that could be identified")
+                    return(1)
+
+        odd_list = list(set(isolation_cpus) - set(online_cpus))
         if len(odd_list) > 0:
-            t_global.log.warning("this is odd, rcu_nocbs contains cpus that are not online: %s" % (odd_list))
+            t_global.log.warning("this is odd, isolation cpus contains cpus that are not online: %s" % (odd_list))
 
-        housekeeping_cpus = list(set(online_cpus) - set(rcu_nocbs_cpus))
+        housekeeping_cpus = list(set(online_cpus) - set(isolation_cpus))
         if len(housekeeping_cpus) == 0:
             t_global.log.warning("this is odd, there are no housekeeping cpus")
         else:
             output_cpu_info("housekeeping", housekeeping_cpus)
 
-            output_cpu_info("isolated", rcu_nocbs_cpus)
+            output_cpu_info("isolated", isolation_cpus)
     elif t_global.args.environment == "container":
         system_cpus = system_cpu_topology(log = t_global.log)
 
