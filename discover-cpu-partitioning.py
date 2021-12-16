@@ -101,7 +101,7 @@ def get_isolcpus():
             t_global.log.debug("get_isolcpus: kernel_cli: %s" % (kernel_cli))
 
             # find 'isolcpus=[<arg>[,<arg>[,]]]<cpu-list>' if it exists in the kernel command line
-            match = re.search(r"isolcpus=(\w+,)*([0-9\-,]+)", kernel_cli)
+            match = re.search(r"\bisolcpus=(\w+,)*([0-9\-,]+)", kernel_cli)
             if match:
                 t_global.log.debug("get_isolcpus: %s" % (match.group(2)))
                 isolcpus = system_cpu_topology.parse_cpu_list(match.group(2))
