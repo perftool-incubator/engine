@@ -73,11 +73,8 @@ echo "$@"
 echo
 longopts="rickshaw-host:,base-run-dir:,endpoint-run-dir:,cs-label:,roadblock-server:"
 longopts+=",roadblock-passwd:,roadblock-id:,disable-tools:,osruntime:,endpoint:,max-sample-failures:"
-longopts+=",cpu-partitioning:,max-rb-attempts:"
+longopts+=",cpu-partitioning:,max-rb-attempts:,client-server-script-start-timeout:"
 opts=$(getopt -q -o "" --longoptions "$longopts" -n "getopt.sh" -- "$@");
-if [ $? -ne 0 ]; then
-    exit_error "\nUnrecognized option specified: $1\n\n"
-fi
 eval set -- "$opts";
 while true; do
     case "$1" in
@@ -144,6 +141,12 @@ while true; do
         --max-rb-attempts)
             shift;
             export max_rb_attempts="$1"
+            shift;
+            ;;
+        --client-server-script-start-timeout)
+            shift;
+            export client_server_script_start_timeout="$1"
+            echo "setting client_server_script_start_timeout to $client_server_script_start_timeout"
             shift;
             ;;
         --)

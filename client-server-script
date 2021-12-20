@@ -14,7 +14,6 @@ rb_exit_timeout=3
 rb_exit_abort=4
 rb_exit_input=2
 default_timeout=240
-client_server_script_timeout=720
 runtime_padding=180
 abort=0
 
@@ -160,11 +159,8 @@ echo
 function process_opts() {
     longopts="rickshaw-host:,base-run-dir:,endpoint-run-dir:,cs-label:,roadblock-server:"
     longopts+=",roadblock-passwd:,roadblock-id:,disable-tools:,endpoint:,osruntime:,max-sample-failures:"
-    longopts+=",max-rb-attempts:"
+    longopts+=",max-rb-attempts:,client-server-script-start-timeout:"
     opts=$(getopt -q -o "" --longoptions "$longopts" -n "getopt.sh" -- "$@");
-    if [ $? -ne 0 ]; then
-        exit_error "\nUnrecognized option specified: $@\n\n"
-    fi
     eval set -- "$opts";
     while true; do
         case "$1" in
@@ -223,10 +219,16 @@ function process_opts() {
                 max_rb_attempts="$1"
                 shift;
                 ;;
+            --client-server-script-start-timeout)
+                shift;
+                client_server_script_start_timeout="$1"
+                echo "setting client_server_script_start_timeout to $client_server_script_start_timeout"
+                shift;
+                ;;
             --)
                 shift;
                 break;
-            ;;
+                ;;
             *)
                 exit_error "Unexpected argument [$1]"
                 shift;
@@ -234,6 +236,9 @@ function process_opts() {
                 ;;
         esac
     done
+if [ -z "$client-server-script-start-timeout" ]; then
+    client_server_script_start_timeout=720
+fi
 }
 
 function validate_core_env() {
@@ -285,6 +290,7 @@ function validate_core_env() {
 	echo "endpoint_run_dir=${endpoint_run_dir}"
     fi
     echo
+    echo "client_server_script_start_timeout: $client_server_script_start_timeout"
 }
 
 function setup_core_env() {
@@ -774,7 +780,7 @@ leader=controller
 process_opts
 validate_core_env
 setup_core_env # roadblocks may be used after this
-if [ $abort -eq 0 ]; then do_roadblock $sync $leader $client_server_script_timeout; fi
+if [ $abort -eq 0 ]; then do_roadblock $sync $leader $client_server_script_start_timeout; fi
 if [ $abort -eq 0 -a $? -eq 0 ]; then
     sync=$sync_prefix-get-data
     pushd "$cs_dir" >/dev/null || abort_error "Could not chdir to $cs_dir" $sync $leader
