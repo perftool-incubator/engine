@@ -236,7 +236,7 @@ function process_opts() {
                 ;;
         esac
     done
-if [ -z "$client-server-script-start-timeout" ]; then
+if [ -z "$client_server_script_start_timeout" ]; then
     client_server_script_start_timeout=720
 fi
 }
