@@ -13,7 +13,6 @@ rb_exit_success=0
 rb_exit_timeout=3
 rb_exit_abort=4
 rb_exit_input=2
-default_timeout=240
 runtime_padding=180
 abort=0
 
@@ -159,7 +158,9 @@ echo
 function process_opts() {
     longopts="rickshaw-host:,base-run-dir:,endpoint-run-dir:,cs-label:,roadblock-server:"
     longopts+=",roadblock-passwd:,roadblock-id:,disable-tools:,endpoint:,osruntime:,max-sample-failures:"
-    longopts+=",max-rb-attempts:,client-server-script-start-timeout:"
+    longopts+=",max-rb-attempts:"
+    longopts+=",client-server-script-start-timeout:,client-server-script-stop-timeout:,client-server-send-data-timeout:"
+    longopts+=",default-timeout:,endpoint-deploy-timeout:,endpoint-move-data-timeout:"
     opts=$(getopt -q -o "" --longoptions "$longopts" -n "getopt.sh" -- "$@");
     eval set -- "$opts";
     while true; do
@@ -219,26 +220,50 @@ function process_opts() {
                 max_rb_attempts="$1"
                 shift;
                 ;;
+            --default-timeout)
+                shift;
+                default_timeout="$1"
+                echo "setting default_timeout to $default_timeout"
+                shift;
+                ;;
+            --client-server-script-stop-timeout)
+                shift;
+                client_server_script_stop_timeout="$1"
+                echo "setting client_server_script_stop_timeout to $client_server_script_stop_timeout"
+                shift;
+                ;;
             --client-server-script-start-timeout)
                 shift;
                 client_server_script_start_timeout="$1"
                 echo "setting client_server_script_start_timeout to $client_server_script_start_timeout"
                 shift;
                 ;;
+            --client-server-send-data-timeout)
+                shift;
+                client_server_send_data_timeout="$1"
+                echo "setting client_server_send_data_timeout to $client_server_send_data_timeout"
+                shift;
+                ;;
             --)
                 shift;
                 break;
-                ;;
+            ;;
             *)
-                exit_error "Unexpected argument [$1]"
-                shift;
-                break;
-                ;;
+            exit_error "Unexpected argument [$1]" endpoint-deploy
+            shift;
+            break;
+            ;;
         esac
     done
-if [ -z "$client_server_script_start_timeout" ]; then
-    client_server_script_start_timeout=720
-fi
+    if [ -z "$default_timeout" ]; then
+        default_timeout=1200
+    elif [ -z "$client_server_script_start_timeout" ]; then
+        client_server_script_start_timeout=1200
+    elif [ -z "$client_server_script_stop_timeout" ]; then
+        client_server_script_stop_timeout=1200
+    elif [ -z "$client_server_send_data_timeout" ]; then
+        client_server_send_data_timeout=7200
+    fi
 }
 
 function validate_core_env() {
